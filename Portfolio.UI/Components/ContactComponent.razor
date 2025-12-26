@@ -1,0 +1,56 @@
+﻿@using SendGrid
+@using SendGrid.Helpers.Mail
+@inject HttpClient _httpClient;
+
+<div class="contact-block">
+  <h3>Contact
+    <p>For freelancing work and collaboration.</p>
+  </h3>
+  @if (_InProcess)
+  {
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  }
+  else
+  {
+    <EditForm OnValidSubmit="@HandleCF" Model="@_contact">
+      <DataAnnotationsValidator />
+      <label for="Name">Name</label>
+      <InputText id="Name" class="form-control" aria-placeholder="Name" DisplayName="Name" @bind-Value="_contact.name"
+        required></InputText>
+      <label for="Email">Email</label>
+      <InputText id="Email" name="Email" class="form-control" type="email" @bind-Value="_contact.email" />
+      <ValidationMessage For=@(() => _contact.email) />
+      <label for="message">Message</label>
+      <InputTextArea name="message" class="form-control" aria-rowcount="5" aria-placeholder="how can I be of service"
+        @bind-Value="_contact.message" />
+      <button type="submit" class="btn btn-primary btn-lg" id="btnContact">Submit <i hidden
+          class='fa fa-circle-o-notch fa-spin'></i></button>
+      <ValidationSummary Model="_contact" class="text-danger dv" id="dvValidation" />
+    </EditForm>
+  }
+</div>
+@code {
+  ContactModel _contact = new ContactModel();
+  bool _InProcess = false;
+
+  private async Task HandleCF()
+  {
+    _InProcess = true;
+    try
+    {
+      await Task.Delay(200);
+      await _httpClient.PostAsJsonAsync(
+      "https://<function-app>.azurewebsites.net/api/send-resume",
+      _contact);
+    }
+    catch
+    {
+
+    }
+    _InProcess = false;
+    _contact= new ContactModel();
+
+  }
+}

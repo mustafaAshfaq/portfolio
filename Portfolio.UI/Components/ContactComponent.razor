@@ -1,56 +1,87 @@
-﻿@using SendGrid
-@using SendGrid.Helpers.Mail
-@inject HttpClient _httpClient;
+﻿@using System.Net
+@inject HttpClient _httpClient
 
 <div class="contact-block">
-  <h3>Contact
-    <p>For freelancing work and collaboration.</p>
-  </h3>
+  <h3>Contact</h3>
+  <p>For freelancing work and collaboration.</p>
+  <EditForm OnValidSubmit="@HandleCF" Model="@_contact">
+    <DataAnnotationsValidator />
+    <fieldset disabled="@_InProcess">
+      <label for="Name">Name</label>
+      <InputText id="Name" class="form-control" DisplayName="Name" @bind-Value="_contact.name"
+        maxlength="100" autocomplete="name" required />
+      <label for="Email">Email</label>
+      <InputText id="Email" name="Email" class="form-control" type="email" @bind-Value="_contact.email"
+        maxlength="254" autocomplete="email" required />
+      <label for="message">Message</label>
+      <InputTextArea id="message" name="message" class="form-control" rows="5"
+        placeholder="How can I be of service?" @bind-Value="_contact.message" maxlength="5000" required />
+      <div class="contact-honeypot" aria-hidden="true">
+        <label for="contact-website">Leave this field empty</label>
+        <InputText id="contact-website" @bind-Value="_contact.honeypot" tabindex="-1" autocomplete="off" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg" id="btnContact" disabled="@_InProcess">
+        @(_InProcess ? "Sending..." : "Submit")
+      </button>
+      <ValidationSummary class="text-danger dv" id="dvValidation" />
+    </fieldset>
+  </EditForm>
   @if (_InProcess)
   {
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
+    <p role="progressbar" aria-label="Sending inquiry">Sending your inquiry...</p>
   }
-  else
+  @if (_success is not null)
   {
-    <EditForm OnValidSubmit="@HandleCF" Model="@_contact">
-      <DataAnnotationsValidator />
-      <label for="Name">Name</label>
-      <InputText id="Name" class="form-control" aria-placeholder="Name" DisplayName="Name" @bind-Value="_contact.name"
-        required></InputText>
-      <label for="Email">Email</label>
-      <InputText id="Email" name="Email" class="form-control" type="email" @bind-Value="_contact.email" />
-      <ValidationMessage For=@(() => _contact.email) />
-      <label for="message">Message</label>
-      <InputTextArea name="message" class="form-control" aria-rowcount="5" aria-placeholder="how can I be of service"
-        @bind-Value="_contact.message" />
-      <button type="submit" class="btn btn-primary btn-lg" id="btnContact">Submit <i hidden
-          class='fa fa-circle-o-notch fa-spin'></i></button>
-      <ValidationSummary Model="_contact" class="text-danger dv" id="dvValidation" />
-    </EditForm>
+    <p role="status">@_success</p>
+  }
+  @if (_error is not null)
+  {
+    <p role="alert" class="text-danger">@_error</p>
   }
 </div>
 @code {
-  ContactModel _contact = new ContactModel();
+  ContactModel _contact = new();
   bool _InProcess = false;
+  string? _success;
+  string? _error;
 
   private async Task HandleCF()
   {
+    if (_InProcess)
+      return;
+
     _InProcess = true;
+    _success = null;
+    _error = null;
     try
     {
-      await Task.Delay(200);
-      await _httpClient.PostAsJsonAsync(
-      "https://<function-app>.azurewebsites.net/api/send-resume",
-      _contact);
+      using var response = await _httpClient.PostAsJsonAsync("/api/contact", _contact);
+      if (response.StatusCode == HttpStatusCode.Accepted)
+      {
+        _contact = new();
+        _success = "Your inquiry was accepted for sending. Inbox delivery is not guaranteed.";
+      }
+      else
+      {
+        _error = response.StatusCode switch
+        {
+          HttpStatusCode.BadRequest => "Please check your name, email, and message, then try again.",
+          HttpStatusCode.GatewayTimeout => "Sending timed out. Delivery is uncertain; please wait before retrying.",
+          _ => "Your inquiry could not be sent. Please try again later."
+        };
+      }
     }
-    catch
+    catch (HttpRequestException)
     {
-
+      _error = "Unable to connect. Check your connection and try again.";
     }
-    _InProcess = false;
-    _contact= new ContactModel();
-
+    catch (OperationCanceledException)
+    {
+      _error = "Sending timed out. Delivery is uncertain; please wait before retrying.";
+    }
+    finally
+    {
+      _InProcess = false;
+    }
   }
 }

@@ -5,6 +5,12 @@
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "SendGrid__ApiKey": "",
     "SendGrid__SenderEmail": "",
-    "SendGrid__RecipientEmail": ""
+    "SendGrid__RecipientEmail": "",
+    "AzureOpenAI__Endpoint": "",
+    "AzureOpenAI__Deployment": "",
+    "AzureOpenAI__ApiKey": "",
+    "AzureSearch__Endpoint": "",
+    "AzureSearch__ApiKey": "",
+    "AzureSearch__IndexName": "portfolio-knowledge"
   }
 }

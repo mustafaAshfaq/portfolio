@@ -1,0 +1,86 @@
+[
+  {
+    "id": "profile-intro",
+    "topic": "profile",
+    "title": "Profile",
+    "terms": "about who name bio location country city freelance contact email resume",
+    "content": "Mustafa Birotywala is an applications programmer based in Bengaluru, Karnataka, India. The about section lists his age as 42 years and his experience as 15 years. Freelance status is Available. Public email: mustafa.ash@pm.me. The site introduces him as: Innovative applications programmer seeks a challenging position where creative ideas can be fully developed solutions and products. The about section links a resume PDF."
+  },
+  {
+    "id": "profile-education",
+    "topic": "profile",
+    "title": "Education",
+    "terms": "education degree diploma university college study qualification",
+    "content": "Education: P.G. Diploma in Information Technology from Symbiosis International University, Pune, 2006-2009. Bachelor's degree from Mohanlal Sukhadia University, Udaipur (Rajasthan), 2002-2005."
+  },
+  {
+    "id": "experience-ntt",
+    "topic": "experience",
+    "title": "Lead Engineer at NTT Data Services",
+    "terms": "work job employment career role employer company current",
+    "content": "Lead Engineer at NTT Data Services, September 2024 to present. Leading a team of developers and testers building fullstack applications. Design and development of distributed services based on a microservices architecture."
+  },
+  {
+    "id": "experience-philips",
+    "topic": "experience",
+    "title": "Software Technologist at Philips India",
+    "terms": "work job employment career role employer company medical",
+    "content": "Software Technologist at Philips India, June 2022 to September 2024. Developed software services and libraries used in medical imaging systems. Led a team of 5 in code reviews, mentorship, and planning. Assisted the lead architect with requirement gathering, analysis, technical documentation, task assignment, and the development process."
+  },
+  {
+    "id": "experience-opendestinations",
+    "topic": "experience",
+    "title": "Project Leader at OpenDestinations Infotech",
+    "terms": "work job employment career role employer company travel",
+    "content": "Project Leader at OpenDestinations Infotech, August 2009 to May 2022. The company builds travel technology products for B2C and B2B clients. Work included requirement gathering, project planning and execution, client collaboration, and team leadership."
+  },
+  {
+    "id": "experience-niche",
+    "topic": "experience",
+    "title": "Developer at Niche Technologies",
+    "terms": "work job employment career role employer company ivr ecommerce",
+    "content": "Developer at Niche Technologies, November 2016 to December 2017. Worked on an IVR application and an e-commerce application that showed travel operators' products and let users review them with Joomla."
+  },
+  {
+    "id": "skill-enterprise",
+    "topic": "skill",
+    "title": "Enterprise development",
+    "terms": "skill skills technology stack tools languages backend",
+    "content": "Enterprise development uses ASP.NET MVC, C#, and SQL Server."
+  },
+  {
+    "id": "skill-fullstack",
+    "topic": "skill",
+    "title": "Full-stack development",
+    "terms": "skill skills technology stack tools languages frontend javascript",
+    "content": "Full-stack development uses the MEAN stack, React, and client-side JavaScript frameworks."
+  },
+  {
+    "id": "skill-mobile",
+    "topic": "skill",
+    "title": "Mobile applications",
+    "terms": "skill skills technology stack tools mobile app",
+    "content": "Mobile application development uses NativeScript, Ionic, and .NET MAUI."
+  },
+  {
+    "id": "skill-web",
+    "topic": "skill",
+    "title": "Websites",
+    "terms": "skill skills technology stack website cms",
+    "content": "Website work covers CMS sites, static websites, and web applications."
+  },
+  {
+    "id": "project-works",
+    "topic": "project",
+    "title": "Project works",
+    "terms": "project projects portfolio work gallery link website",
+    "content": "The Project Works section groups items as Microsoft technologies, Javascript, and Mobile. Public links on the page: https://res.etstur.com (Microsoft technologies), http://spree123.herokuapp.com/ (Javascript), https://www.opendestinations.com (Microsoft technologies and Javascript), and https://matsearch.azurewebsites.net (Javascript). Two further items, one marked Javascript and Mobile and one marked Mobile, have no public link and no written description on the page."
+  },
+  {
+    "id": "project-counts",
+    "topic": "project",
+    "title": "Project figures shown on the site",
+    "terms": "project projects count awards clients delivered",
+    "content": "The site displays these figures: 12 projects working, 5 projects completed and delivered, 7 employee achievement awards received, and 10 happy clients."
+  }
+]

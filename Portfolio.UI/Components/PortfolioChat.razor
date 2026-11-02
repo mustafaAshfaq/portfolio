@@ -1,0 +1,176 @@
+@using System.Net
+@inject HttpClient Http
+
+<div class="portfolio-chat">
+  @if (!_open)
+  {
+    <button type="button" id="portfolio-chat-open" class="portfolio-chat-launch" @onclick="OpenPanel">
+      Ask about this portfolio
+    </button>
+  }
+  else
+  {
+    <section class="portfolio-chat-panel" aria-labelledby="portfolio-chat-title" @onkeydown="OnKeyDown">
+      <header class="portfolio-chat-header">
+        <div>
+          <p class="portfolio-chat-eyebrow">From the page</p>
+          <h2 id="portfolio-chat-title">Portfolio assistant</h2>
+        </div>
+        <button type="button" class="portfolio-chat-close" @onclick="Close">Close</button>
+      </header>
+      <p class="portfolio-chat-hint">Answers use the profile, experience, projects, and skills published on this site.</p>
+      <div class="portfolio-chat-starters" aria-label="Starter questions">
+        @foreach (var starter in Starters)
+        {
+          <button type="button" class="portfolio-chat-chip" disabled="@_pending" @onclick="() => Ask(starter.Question)">
+            @starter.Label
+          </button>
+        }
+      </div>
+      <div class="portfolio-chat-log" role="log" aria-live="polite" aria-relevant="additions">
+        @foreach (var message in _messages)
+        {
+          <article class="portfolio-chat-message @message.Role">
+            <p>@message.Text</p>
+            @if (message.Sources.Count > 0)
+            {
+              <p class="portfolio-chat-sources">From @string.Join(", ", message.Sources)</p>
+            }
+          </article>
+        }
+      </div>
+      @if (_error is not null)
+      {
+        <p role="alert" class="portfolio-chat-error">@_error</p>
+      }
+      <form @onsubmit="AskCurrent" @onsubmit:preventDefault="true">
+        <label class="portfolio-chat-label" for="portfolio-chat-question">Question</label>
+        <div class="portfolio-chat-compose">
+          <input id="portfolio-chat-question" @ref="_questionBox" maxlength="500" required disabled="@_pending"
+            placeholder="Ask about experience, projects, or skills" @bind="_question" @bind:event="oninput" />
+          <div class="portfolio-chat-honeypot" aria-hidden="true">
+            <label for="portfolio-chat-website">Leave this field empty</label>
+            <input id="portfolio-chat-website" @bind="_honeypot" tabindex="-1" autocomplete="off" />
+          </div>
+          <button type="submit" id="portfolio-chat-ask" disabled="@_pending">@(_pending ? "Asking..." : "Ask")</button>
+        </div>
+      </form>
+    </section>
+  }
+</div>
+
+@code {
+  private static readonly (string Label, string Question)[] Starters =
+  [
+    ("Profile", "Who are you and where are you based?"),
+    ("Experience", "What roles have you held?"),
+    ("Projects", "Which projects are on this site?"),
+    ("Skills", "What technologies do you use?")
+  ];
+
+  private readonly List<TranscriptMessage> _messages = [];
+  private readonly List<ChatTurnModel> _history = [];
+  private ElementReference _questionBox;
+  private bool _open;
+  private bool _focusQuestion;
+  private bool _pending;
+  private string _question = "";
+  private string _honeypot = "";
+  private string? _error;
+
+  private void OpenPanel()
+  {
+    _open = true;
+    _focusQuestion = true;
+  }
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (!_focusQuestion || !_open)
+      return;
+
+    _focusQuestion = false;
+    try
+    {
+      await _questionBox.FocusAsync();
+    }
+    catch (Exception exception) when (exception is InvalidOperationException or JSException)
+    {
+    }
+  }
+
+  private void Close() => _open = false;
+
+  private void OnKeyDown(KeyboardEventArgs args)
+  {
+    if (args.Key == "Escape")
+      _open = false;
+  }
+
+  private Task AskCurrent() => Ask(_question);
+
+  private async Task Ask(string question)
+  {
+    var trimmed = question.Trim();
+    if (_pending || trimmed.Length is < 1 or > 500)
+      return;
+
+    _pending = true;
+    _error = null;
+    _question = trimmed;
+    try
+    {
+      using var response = await Http.PostAsJsonAsync("/api/chat", new ChatRequestModel(trimmed, _history.ToArray(), _honeypot));
+      if (response.StatusCode != HttpStatusCode.OK)
+      {
+        _error = response.StatusCode switch
+        {
+          HttpStatusCode.BadRequest => "Ask a shorter question about the portfolio.",
+          HttpStatusCode.GatewayTimeout => "The assistant timed out. Please try again.",
+          HttpStatusCode.ServiceUnavailable => "The portfolio assistant is unavailable. Please try again later.",
+          _ => "The portfolio assistant could not answer. Please try again later."
+        };
+        return;
+      }
+
+      var answer = await response.Content.ReadFromJsonAsync<ChatAnswerModel>();
+      if (string.IsNullOrWhiteSpace(answer?.Answer))
+      {
+        _error = "The portfolio assistant could not answer. Please try again later.";
+        return;
+      }
+
+      var sources = answer.Sources?.Select(source => source.Title).Where(title => !string.IsNullOrWhiteSpace(title)).Cast<string>().ToArray()
+        ?? [];
+      _messages.Add(new TranscriptMessage("visitor", trimmed, []));
+      _messages.Add(new TranscriptMessage("assistant", answer.Answer.Trim(), sources));
+      _history.Add(new ChatTurnModel("user", trimmed));
+      _history.Add(new ChatTurnModel("assistant", answer.Answer.Trim()));
+      while (_history.Count > 6)
+        _history.RemoveAt(0);
+      _question = "";
+    }
+    catch (HttpRequestException)
+    {
+      _error = "Unable to connect. Check your connection and try again.";
+    }
+    catch (OperationCanceledException)
+    {
+      _error = "The assistant timed out. Please try again.";
+    }
+    finally
+    {
+      _pending = false;
+    }
+  }
+
+  private sealed record ChatRequestModel(string Question, ChatTurnModel[] History, string Honeypot);
+
+  private sealed record ChatTurnModel(string Role, string Text);
+
+  private sealed record ChatAnswerModel(string? Answer, ChatSourceModel[]? Sources);
+
+  private sealed record ChatSourceModel(string? Topic, string? Title);
+
+  private sealed record TranscriptMessage(string Role, string Text, IReadOnlyList<string> Sources);
+}

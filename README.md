@@ -114,6 +114,46 @@ attachments, automatic replies, persistence, and queues are out of scope.
 
 Automated tests do not establish live inbox delivery or Azure deployment success.
 
+# Portfolio chat
+
+A visitor can ask about the published profile, experience, projects, and skills. The Blazor panel calls same-origin `POST /api/chat` on the existing Functions API.
+
+The answer is retrieval-augmented. `Azure.Search.Documents` stores the portfolio passages in Azure AI Search and retrieves the closest ones. `Microsoft.Extensions.AI` with `Azure.AI.OpenAI` sends those passages to a Foundry or Azure OpenAI chat deployment. The model is instructed to answer only from the passages. If nothing is retrieved, the API replies without calling the model.
+
+Use the always-free Azure AI Search tier (one service per subscription, 50 MB). That tier has no managed identity, so the function uses the admin API key. For the chat deployment, choose a Foundry model on the Free Tier quota when one is available. Usage past that quota is billed. Contact email keeps working when chat settings are absent; chat then returns `503`.
+
+## Server configuration
+
+Add these to the Static Web App environment variables, beside the SendGrid settings. They are backend settings. Never put the keys in browser assets.
+
+| Setting | Value |
+| --- | --- |
+| `AzureOpenAI__Endpoint` | `https://` endpoint of the Foundry or Azure OpenAI resource |
+| `AzureOpenAI__Deployment` | Chat deployment name, preferably a Free Tier model |
+| `AzureOpenAI__ApiKey` | Key for that resource |
+| `AzureSearch__Endpoint` | `https://<name>.search.windows.net` |
+| `AzureSearch__ApiKey` | Admin key for the free search service |
+| `AzureSearch__IndexName` | `portfolio-knowledge` |
+
+The first successful question creates or updates the `portfolio-knowledge` index and uploads the passages shipped with the API.
+
+## Contract
+
+The JSON body has `question`, optional `history` (up to 6 `{ role, text }` items, role `user` or `assistant`), and optional `honeypot`. After trimming, the question must be 1–500 characters. The body is limited to 16 KiB. A nonempty honeypot is rejected without calling Azure.
+
+- `200`: an answer, plus the retrieved `sources` (topic and title). This can be the fallback sentence when nothing matched.
+- `400`: invalid JSON, question, or history, or a honeypot.
+- `413`: body too large.
+- `502`: search or model rejection.
+- `503`: missing or invalid server configuration.
+- `504`: search or model timeout.
+
+Logs record the outcome and passage count, not the question, the answer, or the keys.
+
+## Run locally
+
+Add the six settings to `Api/local.settings.json`. Browse through the Static Web Apps proxy at `http://localhost:4280` so `/api/chat` reaches Functions. Open **Ask about this portfolio**, then ask about experience, projects, or skills.
+
 # Google Tag Manager
 The site loads a client-side Google Tag Manager web container when `GoogleTagManager:ContainerId` is set. A blank id loads nothing. The container id is public in the page, so it lives in appsettings rather than an environment variable.
 
